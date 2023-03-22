@@ -1,0 +1,1 @@
+g++ -O2 -O3 -DNDEBUG CMakeFiles/calcu.dir/src/geomtools.cpp.o CMakeFiles/calcu.dir/src/main.cpp.o -o calcu  /usr/lib/x86_64-linux-gnu/libgmpxx.so /usr/lib/x86_64-linux-gnu/libmpfr.so /usr/lib/x86_64-linux-gnu/libgmp.so 

@@ -1,0 +1,22 @@
+C:\Windows\system32\wsl.exe --distribution Ubuntu --exec /bin/bash -c "export CMAKE_COLOR_DIAGNOSTICS=ON && export CLION_IDE=TRUE && export JETBRAINS_IDE=TRUE && cd /mnt/d/TUDStudy/3Dcm/A2/calcu/cmake-build-debug && /usr/local/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G 'CodeBlocks - Unix Makefiles' -S /mnt/d/TUDStudy/3Dcm/A2/calcu -B /mnt/d/TUDStudy/3Dcm/A2/calcu/cmake-build-debug"
+CMake Warning at /usr/lib/x86_64-linux-gnu/cmake/CGAL/CGALConfig.cmake:92 (message):
+  CGAL_DATA_DIR cannot be deduced, set the variable CGAL_DATA_DIR to set the
+  default value of CGAL::data_file_path()
+Call Stack (most recent call first):
+  CMakeLists.txt:10 (find_package)
+
+
+-- Using header-only CGAL
+-- Targetting Unix Makefiles
+-- Using g++ compiler.
+-- Boost include dirs: /usr/include
+-- Boost libraries:    
+-- Using gcc version 4 or later. Adding -frounding-math
+-- Build type: Release
+-- USING CXXFLAGS = '-O2 -O3 -DNDEBUG'
+-- USING EXEFLAGS = ' '
+-- CGAL::CGAL
+-- 
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /mnt/d/TUDStudy/3Dcm/A2/calcu/cmake-build-debug

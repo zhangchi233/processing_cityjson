@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/tryE.dir/main.cpp.o -o tryE  /usr/lib/x86_64-linux-gnu/libgmpxx.so /usr/lib/x86_64-linux-gnu/libmpfr.so /usr/lib/x86_64-linux-gnu/libgmp.so 

@@ -1,0 +1,3 @@
+/Users/asdfasd/Downloads/calcu/build/CMakeFiles/calcu.dir
+/Users/asdfasd/Downloads/calcu/build/CMakeFiles/edit_cache.dir
+/Users/asdfasd/Downloads/calcu/build/CMakeFiles/rebuild_cache.dir
