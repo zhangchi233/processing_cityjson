@@ -1,4 +1,4 @@
-/*
+ /*
   geo1004.2023
   hw02 help code
   Hugo Ledoux <h.ledoux@tudelft.nl>
@@ -35,15 +35,17 @@ std::vector<Point3> get_coordinates(const json& j, bool translate = true);
 void                save2obj(std::string filename, const json& j);
 void                enrich_and_save(std::string filename, json& j);
 
+
 using namespace std;
 
 int main(int argc, const char * argv[]) {
     //-- will read the file passed as argument or 2b.city.json if nothing is passed
-    const char* filename = (argc > 1) ? argv[1] : "../data/myfile.city.json";
+    const char* filename = (argc > 1) ? argv[1] : "../data/cube.city.json";
     std::cout << "Processing: " << filename << std::endl;
     std::ifstream input(filename);
     json j;
     input >> j; //-- store the content of the file in a nlohmann::json object
+    cout<<j<<endl
     input.close();
 
     //-- convert each City Object in the file to OBJ and save to a file
@@ -289,23 +291,49 @@ int calculate_aspect(const vector<int>& tri,const int& size_surface_semantics_ar
     Point3 p1 = vertices[tri[0]];
     Point3 p2 = vertices[tri[1]];
     Point3 p3 = vertices[tri[2]];
-    std::vector<double> vector1 = {p2.x()-p1.x(),p2.y()-p1.y(),p2.z()-p1.z()};
-    std::vector<double> vector2 = {p3.x()-p1.x(),p3.y()-p1.y(),p3.z()-p1.z()};
-    double norm_x = vector2[0]*vector1[0]+vector2[0]*vector1[1]+vector2[0]*vector1[2];
-    double norm_y = vector2[1]*vector1[0]+vector2[1]*vector1[1]+vector2[1]*vector1[2];
-    double length = sqrt(norm_x*norm_x+norm_y*norm_y);
-    norm_y=norm_y/length;
-    norm_x = norm_x/length;
-    double slope = norm_y/norm_x;
-    if(abs(norm_x-0)<=0.1 && abs(norm_y-0)<=0.1){
+    K::Vector_3 v2 = p3-p1;
+    K::Vector_3 v1 = p2-p1;
+    K::Vector_3 normal = CGAL::cross_product(v1,v2);
+
+    // Print the normal vector
+    
+
+
+    //double norm = CGAL::sqrt(CGAL::norm(normal));
+    //std::vector<double> vector1 = {p2.x()-p1.x(),p2.y()-p1.y(),p2.z()-p1.z()};
+    //std::vector<double> vector2 = {p3.x()-p1.x(),p3.y()-p1.y(),p3.z()-p1.z()};
+    double norm_x = normal.x();
+    double norm_y = normal.y();
+    //std::cout << "The normal vector of the three points is (" << normal.x() << ", " << normal.y() << ", " << normal.z() << ")" << "our vector is"<<norm_x<<" "<<norm_y << std::endl;
+    //double length = sqrt(norm_x*norm_x+norm_y*norm_y);
+    //norm_y=norm_y/length;
+    //norm_x = norm_x/length;
+    double slope = 0;
+    if (abs(norm_x-0)<=0.01){slope = norm_y/norm_x;}
+    /*"""
+surfacesArray.push_back({ {"type", "RoofSurface"},{"orientation","EN" }}); //0
+surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "NE" }}); //1
+surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "NW" }}); //2
+surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "WN" }}); //3
+surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "WS" }}); //4
+surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "SW" }}); //5
+surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "SE" }}); //6
+surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "ES" }}); //7
+surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "Horizontal" }});
+
+
+
+    */
+
+    if(abs(norm_x-0)<=0.01 && abs(norm_y-0)<=0.01){
         return size_surface_semantics_array+8;
 
     }
-    else if(norm_x==0 && norm_y>0){
+    else if(abs(norm_x-0)<=0.01 && norm_y>0){
         return size_surface_semantics_array+1;
 
     }
-    else if(norm_x==0 && norm_y<0){
+    else if(abs(norm_x-0)<=0.01 && norm_y<0){
         return size_surface_semantics_array+5;
 
     }
@@ -434,7 +462,12 @@ std::tuple<double,double,double> calculate_volume_area(json& j,const json& co,co
                     std::vector<std::vector<int>> constrain_triangulors = construct_ct_one_face( lsRings,  vertices);
                     //cout<<"current Rings is"<<lsRings.size()<<endl;
                     // add to all_triangulators volume
-                    building_triangulators.insert(building_triangulators.end(), constrain_triangulors.begin(), constrain_triangulors.end());
+                    for(auto& tir:constrain_triangulors){
+                        building_triangulators.push_back(tir);
+
+
+                    }
+                    //building_triangulators.insert(building_triangulators.end(), constrain_triangulors.begin(), constrain_triangulors.end());
                     //cout<<"current triangulars is"<<constrain_triangulors.size()<<endl;
                     //if(constrain_triangulors.size() == 0){constrain_triangulors = lsRings;}
                     all_triangulators.insert(all_triangulators.end(), constrain_triangulors.begin(), constrain_triangulors.end());
@@ -477,6 +510,7 @@ std::tuple<double,double,double> calculate_volume_area(json& j,const json& co,co
             
             volume_building += std::get<0>(result);
             area_building += std::get<1>(result);
+            roughIndex = std::get<2>(result)*std::get<0>(result);
             
         }
         Point3 pt_zero(0,0,0);
@@ -487,7 +521,7 @@ std::tuple<double,double,double> calculate_volume_area(json& j,const json& co,co
         area_building2 = std::get<1>(result2);
         volume_building2 = std::get<0>(result2);
 
-        roughIndex = std::get<2>(result2);
+        roughIndex = roughIndex/volume_building;
         //break;
         //co["attributes"]["volume"] = dis(gen);
     }
