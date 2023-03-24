@@ -43,9 +43,10 @@ int main(int argc, const char * argv[]) {
     const char* filename = (argc > 1) ? argv[1] : "../data/cube.city.json";
     std::cout << "Processing: " << filename << std::endl;
     std::ifstream input(filename);
+    cout<<"json"<<endl;
     json j;
     input >> j; //-- store the content of the file in a nlohmann::json object
-    cout<<j<<endl
+
     input.close();
 
     //-- convert each City Object in the file to OBJ and save to a file
@@ -143,7 +144,7 @@ double determinant_4 (const double matrix[4][4], int n) {
 std::pair<Point3,vector<Point3>>  sampled_centroid( const double& total_area,const vector<double> area_weights,const std::vector<std::vector<int>> & all_triangulators,const std::vector<Point3>& lspts){
 
     typedef cartesian::Point_3             Point;
-    int total_points = 2000;
+    int total_points = 2048;
     std::vector<Point3> sampled_points;
     std::vector<Point> points;
     
@@ -159,7 +160,7 @@ std::pair<Point3,vector<Point3>>  sampled_centroid( const double& total_area,con
 
     triangles.push_back(cartesian::Triangle_3(p1, p2, p3));
     CGAL::Random_points_in_triangles_3<Point> sample_g(triangles);
-    int sample_nums = 2+int(total_points*area_weights[i]/total_area);
+    int sample_nums = 2+int(total_points*area_weights[i]/total_area); // how we assignments sample size
     std::copy_n(sample_g, sample_nums, std::back_inserter(points));
   
   // Create the generator, input is the vector of Triangle_3
@@ -167,7 +168,7 @@ std::pair<Point3,vector<Point3>>  sampled_centroid( const double& total_area,con
     };
     
     // Get 100 random points in cdt
-    cout<<"sample size"<<points.size()<<endl;
+    //cout<<"sample size"<<points.size()<<endl;
     Point3 centroid = Point3(0,0,0);
     for(Point pt:points){
         double x = pt.x();
@@ -212,7 +213,7 @@ double average_distance(const vector<Point3>& sampled_points,const Point3& centr
 
 // not only volume, but also area
 //calculate_tetrahedron(all_triangulators,vertices,centroid);
-std::tuple<double,double,double> calculate_tetrahedron(const std::vector<std::vector<int>>& re,const std::vector<Point3>& lspts,const Point3& centroid){
+std::tuple<double,double,double,double> calculate_tetrahedron(const std::vector<std::vector<int>>& re,const std::vector<Point3>& lspts,const Point3& centroid){
     double centroidx = centroid.x();
     double centroidy = centroid.y();
     double centroidz = centroid.z();
@@ -281,11 +282,11 @@ std::tuple<double,double,double> calculate_tetrahedron(const std::vector<std::ve
     auto result = sampled_centroid(total_area,area_weights,re,lspts);
     centroid_new = result.first;
     sampled_points = result.second;
-    std::cout<<"centroid is all tegrahedron is"<<centroid_new<<std::endl;
+    //std::cout<<"centroid is all tegrahedron is"<<centroid_new<<std::endl;
     double average_dist = average_distance(sampled_points,centroid_new);
     double roughIndex = 48.735*(average_dist*average_dist*average_dist)/(0.000001+total_volume+std::sqrt(total_area*total_area*total_area));
 
-    return std::make_tuple(total_volume,total_area,roughIndex);
+    return std::make_tuple(total_volume,total_area,roughIndex,average_dist);
 }
 int calculate_aspect(const vector<int>& tri,const int& size_surface_semantics_array,const std::vector<Point3>& vertices){
     Point3 p1 = vertices[tri[0]];
@@ -294,6 +295,7 @@ int calculate_aspect(const vector<int>& tri,const int& size_surface_semantics_ar
     K::Vector_3 v2 = p3-p1;
     K::Vector_3 v1 = p2-p1;
     K::Vector_3 normal = CGAL::cross_product(v1,v2);
+    //cout<<"the inner product of vector is"<<v2.x()*normal.x()+v2.y()*normal.y()+v2.z()*normal.z()<<endl;
 
     // Print the normal vector
     
@@ -308,8 +310,7 @@ int calculate_aspect(const vector<int>& tri,const int& size_surface_semantics_ar
     //double length = sqrt(norm_x*norm_x+norm_y*norm_y);
     //norm_y=norm_y/length;
     //norm_x = norm_x/length;
-    double slope = 0;
-    if (abs(norm_x-0)<=0.01){slope = norm_y/norm_x;}
+    double slope = norm_y/(norm_x+0.000001);
     /*"""
 surfacesArray.push_back({ {"type", "RoofSurface"},{"orientation","EN" }}); //0
 surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "NE" }}); //1
@@ -325,16 +326,22 @@ surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "Horizontal" 
 
     */
 
-    if(abs(norm_x-0)<=0.01 && abs(norm_y-0)<=0.01){
+    if(abs(norm_x-0)<=0.001 && abs(norm_y-0)<=0.001){
         return size_surface_semantics_array+8;
 
     }
-    else if(abs(norm_x-0)<=0.01 && norm_y>0){
-        return size_surface_semantics_array+1;
+    else if(abs(norm_x-0)<=0.001 && norm_y>0){
+        if (slope>=0)
+            {return size_surface_semantics_array+1;}
+        else 
+            {return size_surface_semantics_array+2;}
 
     }
-    else if(abs(norm_x-0)<=0.01 && norm_y<0){
-        return size_surface_semantics_array+5;
+    else if(abs(norm_x-0)<=0.001 && norm_y<0){
+        if (slope>=0)
+            {return size_surface_semantics_array+5;}
+        else
+            {return size_surface_semantics_array+6;}
 
     }
     else if(slope>=1 && norm_y>0){
@@ -373,10 +380,11 @@ surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "Horizontal" 
 }
 
 
-std::tuple<double,double,double> calculate_volume_area(json& j,const json& co,const std::vector<Point3>& vertices){
+std::tuple<double,double,double,double> calculate_volume_area(json& j,const json& co,const std::vector<Point3>& vertices){
     double volume_building = 0;
     double area_building = 0;
     double roughIndex = 0;
+    double avg_distance=0;
    
     double volume_building2=0,area_building2=0;
     if (co["type"] == "Building" && co["children"].size()>0) {
@@ -397,39 +405,40 @@ std::tuple<double,double,double> calculate_volume_area(json& j,const json& co,co
             
             int number_of_point = 0;
             std::vector<std::vector<int>> all_triangulators;
+            json surface_semantics = j["CityObjects"][child]["geometry"][0]["semantics"];
+            auto surfacesArray = surface_semantics["surfaces"];
+
+            int roof_values = 0;
+            //cout<<"surface attributes are"<<j["CityObjects"][child]["geometry"][0]["semantics"]<<endl;
+            for (auto it = surfacesArray.begin(); it != surfacesArray.end(); ) {
+                if (it.value()["type"] == "RoofSurface") {
+                roof_values = std::distance(surfacesArray.begin(), it);
+                it = surfacesArray.erase(it); 
+                break;// remove the object
+                } else {
+                    ++it;
+                } }
+            //cout<<"roof_values "<<roof_values<<endl;
+            int size_surface_semantics_array = surfacesArray.size();
+            surfacesArray.push_back({ {"type", "RoofSurface"},{"orientation","EN" }}); //0
+            surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "NE" }}); //1
+            surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "NW" }}); //2
+            surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "WN" }}); //3
+            surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "WS" }}); //4
+            surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "SW" }}); //5
+            surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "SE" }}); //6
+            surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "ES" }}); //7
+            surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "Horizontal" }}); //8
+            j["CityObjects"][child]["geometry"][0]["semantics"]["surfaces"]=surfacesArray;
+                //cout<<j["CityObjects"][child]["geometry"][0]["semantics"]["surfaces"]<<endl;
+                //cout<<j["CityObjects"][child]["geometry"][0]["semantics"]["values"]<<endl;
+            auto& surfacesValues = j["CityObjects"][child]["geometry"][0]["semantics"]["values"][0];
             
 
             for(auto& solid:j["CityObjects"][child]["geometry"][0]["boundaries"]){
                 
                 
-                json surface_semantics = j["CityObjects"][child]["geometry"][0]["semantics"];
-                auto surfacesArray = surface_semantics["surfaces"];
-
-                int roof_values = 0;
-                cout<<"surface attributes are"<<j["CityObjects"][child]["geometry"][0]["semantics"]<<endl;
-                for (auto it = surfacesArray.begin(); it != surfacesArray.end(); ) {
-                            if (it.value()["type"] == "RoofSurface") {
-                                roof_values = std::distance(surfacesArray.begin(), it);
-                                it = surfacesArray.erase(it); 
-                                break;// remove the object
-                            } else {
-                                     ++it;
-                                    } }
-                cout<<"roof_values "<<roof_values<<endl;
-                int size_surface_semantics_array = surfacesArray.size();
-                surfacesArray.push_back({ {"type", "RoofSurface"},{"orientation","EN" }}); //0
-                surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "NE" }}); //1
-                surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "NW" }}); //2
-                surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "WN" }}); //3
-                surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "WS" }}); //4
-                surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "SW" }}); //5
-                surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "SE" }}); //6
-                surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "ES" }}); //7
-                surfacesArray.push_back({ { "type", "RoofSurface"},{"orientation", "Horizontal" }}); //8
-                j["CityObjects"][child]["geometry"][0]["semantics"]["surfaces"]=surfacesArray;
-                //cout<<j["CityObjects"][child]["geometry"][0]["semantics"]["surfaces"]<<endl;
-                //cout<<j["CityObjects"][child]["geometry"][0]["semantics"]["values"]<<endl;
-                auto& surfacesValues = j["CityObjects"][child]["geometry"][0]["semantics"]["values"][0];
+               
 
                 // start to iterate a cell on the boundaries
                 int surface_index = 0;
@@ -439,7 +448,7 @@ std::tuple<double,double,double> calculate_volume_area(json& j,const json& co,co
                     //cout<<"new surface is "<<surface<<endl;
                     //cout<<"surface size is "<<surface.size()<<endl;
                     for(auto& ring:surface){
-                        cout<<surface<<endl;
+                        //cout<<surface<<endl;
                         std::vector<int> lsring;
                         //cout<<"new ring is "<<ring<<endl;
                         for(auto& pt:ring)
@@ -477,14 +486,14 @@ std::tuple<double,double,double> calculate_volume_area(json& j,const json& co,co
                         //cout<<"roof values"<<surface_value<<endl;
                         //cout<<"run5"<<endl;
                         int new_value= 0;
-                        if(constrain_triangulors.size()==0){int new_value = calculate_aspect(lsRings[0],size_surface_semantics_array,vertices);}
+                        if(constrain_triangulors.size()==0){new_value = calculate_aspect(lsRings[0],size_surface_semantics_array,vertices);}
                         else{
                             new_value = calculate_aspect(constrain_triangulors[0],size_surface_semantics_array,vertices);
                         }
 
                         
                         surfacesValues[surface_index] = new_value;
-                        cout<<"new_value is"<<new_value<<endl;
+                        //cout<<"new_value is"<<new_value<<endl;
                         //cout<<"next step"<<endl;
                         
 
@@ -522,10 +531,11 @@ std::tuple<double,double,double> calculate_volume_area(json& j,const json& co,co
         volume_building2 = std::get<0>(result2);
 
         roughIndex = roughIndex/volume_building;
+        avg_distance = std::get<3>(result2);
         //break;
         //co["attributes"]["volume"] = dis(gen);
     }
-    return std::make_tuple(volume_building,area_building,roughIndex);
+    return std::make_tuple(volume_building,area_building,roughIndex,avg_distance);
 
 
 
@@ -573,7 +583,7 @@ double calculate_OBB_Volumn(const json& j,const json& co,const std::vector<Point
         PMP::triangulate_faces(obb_sm);
         auto v_obb=PMP::volume(obb_sm);
         b += static_cast<double>(v_obb);
-        std::cout << "Volumn of OBB: " << b << std::endl;
+        //std::cout << "Volumn of OBB: " << b << std::endl;
     }
 return b;
 }
@@ -595,7 +605,7 @@ Point3  calculate_centriod(const json& j,const json& co,const std::vector<Point3
             //std::cout<<"geometry type "<<j["CityObjects"][child]["type"]<<std::endl;
             //std::cout<<"geometry type "<<j["CityObjects"][child]["semantics"]<<std::endl;
             //std::cout<<"geometry type "<<j["CityObjects"][child]["geometry"][0]["semantics"]<<std::endl;
-            std::cout<<"geometry boundaries size "<<j["CityObjects"][child]["geometry"][0]["boundaries"].size()<<std::endl;
+            //std::cout<<"geometry boundaries size "<<j["CityObjects"][child]["geometry"][0]["boundaries"].size()<<std::endl;
             Point3 centroid(0,0,0);
             std::vector<std::vector<int>> all_triangulators;
             int number_of_point = 0;
@@ -711,7 +721,7 @@ Point3  calculate_centriod(const json& j,const json& co,const std::vector<Point3
             avgx+=pt.x();avgy+=pt.y();avgz+=pt.z();
             num_pt++;
         }
-        cout<<"Point number is: "<<num_pt<<endl;
+        //cout<<"Point number is: "<<num_pt<<endl;
         centriod=Point3(avgx/num_pt,avgy/num_pt,avgz/num_pt);
 
     return centriod;
@@ -733,17 +743,19 @@ void enrich_and_save(std::string filename, json& j) {
             double volume_building = std::get<0>(result);
             double area_building = std::get<1>(result);
             double roughIndex = std::get<2>(result);
+            double avg_distance = std::get<3>(result);
             auto temp=calculate_OBB_Volumn(j, co,vertices);
-            double rectan=volume_building/temp;
-            std::cout<<"the building volume is "<<volume_building<<std::endl;
-            std::cout<<"the oreintBB volume is "<<temp<<endl;
+            double rectan=volume_building/(temp+0.0000001);// avoid extreme scenario
+            //std::cout<<"the building volume is "<<volume_building<<std::endl;
+            //std::cout<<"the oreintBB volume is "<<temp<<endl;
             co["attributes"]["volume"] = volume_building;
             co["attributes"]["roughIndex"] =roughIndex;
             co["attributes"]["rectangularity"] = rectan;
-            cout<<"the rectangularity is "<<rectan<<endl;
+            co["attributes"]["avg_distance"] = avg_distance;
+            //cout<<"the rectangularity is "<<rectan<<endl;
             co["attributes"]["area"] = area_building;
             double hemisphe=3*sqrt(2*M_PI)*volume_building/(sqrt(area_building*area_building*area_building));
-            cout<<"the hemisphericality is "<<hemisphe<<endl;
+            //cout<<"the hemisphericality is "<<hemisphe<<endl;
             co["attributes"]["hemisphericality"] = hemisphe;
 //            Point3 centriod=calculate_centriod(j, co,vertices);
 //            cout<<"cebtriod Point is "<<centriod<<endl;
