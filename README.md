@@ -1,3 +1,4 @@
+# notice: exe and output is in build file
 # processing_cityjson
 processing CityJSON calculate the volume, area, rough index and so on
 processed file use cjio to convert them into correct format, so no need to worry lod/format issues
