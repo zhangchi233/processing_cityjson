@@ -12,3 +12,4 @@ processed file use cjio to convert them into correct format, so no need to worry
 ### simplify it, no adjacent values for buildigns
 ## validation
 except orientation, all index is the same as true value tested on cube three dimension is all 1
+<img width="445" alt="image" src="https://user-images.githubusercontent.com/60132725/227620483-23303012-a288-4490-867e-3e5fc918923b.png">
