@@ -13,3 +13,7 @@ processed file use cjio to convert them into correct format, so no need to worry
 ## validation
 except orientation, all index is the same as true value tested on cube three dimension is all 1
 <img width="445" alt="image" src="https://user-images.githubusercontent.com/60132725/227620483-23303012-a288-4490-867e-3e5fc918923b.png">
+orientation is check by check the direction using google map:
+<img width="694" alt="image" src="https://user-images.githubusercontent.com/60132725/227620681-5f0aa69d-6cbb-448b-b963-c7fd4c137211.png">
+<img width="868" alt="image" src="https://user-images.githubusercontent.com/60132725/227621227-dafdcd40-0c8e-45e6-9ade-2c31d5fa3259.png">
+the best sample may be bk building
